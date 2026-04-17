@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "Lote": {
+      "title": "Lote",
+      "description": "A batch of motorcycles to be inspected",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "codigo": { "type": "string" },
+        "dataChegada": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pendente", "Em Inspeção", "Concluído"] },
+        "observacoes": { "type": "string" },
+        "totalMotos": { "type": "number" },
+        "motosInspecionadas": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "codigo", "dataChegada", "status", "totalMotos", "motosInspecionadas", "userId"]
+    },
+    "Moto": {
+      "title": "Moto",
+      "description": "A motorcycle belonging to a batch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "loteId": { "type": "string" },
+        "modelo": { "type": "string" },
+        "ano": { "type": "number" },
+        "cor": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pendente", "Em Inspeção", "Concluído"] },
+        "chassi": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "loteId", "modelo", "ano", "cor", "status", "chassi", "userId"]
+    },
+    "Inspecao": {
+      "title": "Inspecao",
+      "description": "An inspection report for a motorcycle",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "motoId": { "type": "string" },
+        "loteId": { "type": "string" },
+        "numero": { "type": "string" },
+        "inspetor": { "type": "string" },
+        "dataInicio": { "type": "string" },
+        "dataConclusao": { "type": "string" },
+        "observacoesGerais": { "type": "string" },
+        "resultado": { "type": "string", "enum": ["Aprovado", "Reprovado", "Condicional"] },
+        "status": { "type": "string", "enum": ["Em andamento", "Concluído"] },
+        "data": { "type": "string" },
+        "cabecalho": { "type": "object" },
+        "fotosEtiqueta": { "type": "array", "items": { "type": "string" } },
+        "fotosCaixa": { "type": "object" },
+        "fotosDesmontado": { "type": "array", "items": { "type": "string" } },
+        "itensDesmontados": { "type": "array", "items": { "type": "object" } },
+        "analiseLubrificacao": { "type": "array", "items": { "type": "object" } },
+        "analiseDesgaste": { "type": "array", "items": { "type": "object" } },
+        "analiseChassi": { "type": "array", "items": { "type": "object" } },
+        "analiseEletrico": { "type": "array", "items": { "type": "object" } },
+        "fotosMontada": { "type": "object" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "motoId", "loteId", "numero", "inspetor", "resultado", "status", "data", "userId"]
+    }
+  },
+  "firestore": {
+    "/lotes/{loteId}": {
+      "schema": { "$ref": "#/entities/Lote" },
+      "description": "Stores batches of motorcycles"
+    },
+    "/motos/{motoId}": {
+      "schema": { "$ref": "#/entities/Moto" },
+      "description": "Stores individual motorcycles"
+    },
+    "/inspecoes/{inspecaoId}": {
+      "schema": { "$ref": "#/entities/Inspecao" },
+      "description": "Stores inspection reports"
+    }
+  }
+}

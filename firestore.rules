@@ -1,0 +1,125 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: lotes
+    // Document ID: auto-generated
+    // Fields:
+    //   - id: string (required)
+    //   - codigo: string (required)
+    //   - dataChegada: string (required)
+    //   - status: string (required)
+    //   - observacoes: string (optional)
+    //   - totalMotos: number (required)
+    //   - motosInspecionadas: number (required)
+    //
+    // Collection: motos
+    // Document ID: auto-generated
+    // Fields:
+    //   - id: string (required)
+    //   - loteId: string (required)
+    //   - modelo: string (required)
+    //   - ano: number (required)
+    //   - cor: string (required)
+    //   - status: string (required)
+    //   - chassi: string (required)
+    //
+    // Collection: inspecoes
+    // Document ID: auto-generated
+    // Fields:
+    //   - id: string (required)
+    //   - motoId: string (required)
+    //   - loteId: string (required)
+    //   - numero: string (required)
+    //   - inspetor: string (required)
+    //   - dataInicio: string (optional)
+    //   - dataConclusao: string (optional)
+    //   - observacoesGerais: string (optional)
+    //   - resultado: string (required)
+    //   - status: string (required)
+    //   - data: string (required)
+    //   - cabecalho: map (optional)
+    //   - fotosEtiqueta: list (optional)
+    //   - fotosCaixa: map (optional)
+    //   - fotosDesmontado: list (optional)
+    //   - itensDesmontados: list (optional)
+    //   - analiseLubrificacao: list (optional)
+    //   - analiseDesgaste: list (optional)
+    //   - analiseChassi: list (optional)
+    //   - analiseEletrico: list (optional)
+    //   - fotosMontada: map (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidLote(data) {
+      return hasRequiredFields(['id', 'codigo', 'dataChegada', 'status', 'totalMotos', 'motosInspecionadas']) &&
+             data.id is string &&
+             data.codigo is string &&
+             data.dataChegada is string &&
+             data.status in ['Pendente', 'Em Inspeção', 'Concluído'] &&
+             data.totalMotos is number &&
+             data.motosInspecionadas is number;
+    }
+
+    function isValidMoto(data) {
+      return hasRequiredFields(['id', 'loteId', 'modelo', 'ano', 'cor', 'status']) &&
+             data.id is string &&
+             data.loteId is string &&
+             data.modelo is string &&
+             data.ano is number &&
+             data.cor is string &&
+             data.status in ['Pendente', 'Em Inspeção', 'Concluído'];
+    }
+
+    function isValidInspecao(data) {
+      return hasRequiredFields(['id', 'motoId', 'loteId', 'numero', 'inspetor', 'resultado', 'status', 'data']) &&
+             data.id is string &&
+             data.motoId is string &&
+             data.loteId is string &&
+             data.numero is string &&
+             data.inspetor is string &&
+             data.resultado in ['Aprovado', 'Reprovado', 'Condicional'] &&
+             data.status in ['Em andamento', 'Concluído'] &&
+             data.data is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /lotes/{loteId} {
+      allow read, delete: if true;
+      allow create, update: if isValidLote(request.resource.data);
+    }
+
+    match /motos/{motoId} {
+      allow read, delete: if true;
+      allow create, update: if isValidMoto(request.resource.data);
+    }
+
+    match /inspecoes/{inspecaoId} {
+      allow read, delete: if true;
+      allow create, update: if isValidInspecao(request.resource.data);
+      
+      match /chunks/{chunkId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
