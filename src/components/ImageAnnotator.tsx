@@ -91,30 +91,29 @@ export const ImageAnnotator = ({ imageUrl, onSave, onCancel }: ImageAnnotatorPro
     ctx.fillText(num.toString(), x, y);
   };
 
-  const getMousePos = (e: React.MouseEvent | React.TouchEvent) => {
+  const getMousePos = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     
-    let clientX, clientY;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = (e as React.MouseEvent).clientX;
-      clientY = (e as React.MouseEvent).clientY;
-    }
-
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
     };
   };
 
-  const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleStart = (e: React.PointerEvent) => {
+    // Prevent default to avoid any potential double-handling or scrolling on mobile
+    if (e.cancelable) e.preventDefault();
+    // Only handle primary button or primary touch (no right clicks)
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+    // Optional: capture pointer to keep receiving events even if dragged outside slightly
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+
     const pos = getMousePos(e);
     if (mode === 'arrow') {
       setIsDrawing(true);
@@ -126,12 +125,16 @@ export const ImageAnnotator = ({ imageUrl, onSave, onCancel }: ImageAnnotatorPro
     }
   };
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleMove = (e: React.PointerEvent) => {
     if (!isDrawing) return;
+    if (e.cancelable) e.preventDefault();
     setCurrentPos(getMousePos(e));
   };
 
-  const handleEnd = () => {
+  const handleEnd = (e: React.PointerEvent) => {
+    if (e.cancelable) e.preventDefault();
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    
     if (isDrawing && mode === 'arrow') {
       setIsDrawing(false);
       setAnnotations([...annotations, { type: 'arrow', start: startPos, end: currentPos }]);
@@ -197,14 +200,11 @@ export const ImageAnnotator = ({ imageUrl, onSave, onCancel }: ImageAnnotatorPro
         {image ? (
           <canvas
             ref={canvasRef}
-            onMouseDown={handleStart}
-            onMouseMove={handleMove}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={handleStart}
-            onTouchMove={handleMove}
-            onTouchEnd={handleEnd}
-            className="max-w-full max-h-full object-contain cursor-crosshair border border-zinc-800 shadow-2xl"
+            onPointerDown={handleStart}
+            onPointerMove={handleMove}
+            onPointerUp={handleEnd}
+            onPointerCancel={handleEnd}
+            className="max-w-full max-h-full object-contain cursor-crosshair border border-zinc-800 shadow-2xl touch-none"
             style={{ touchAction: 'none' }}
           />
         ) : (
